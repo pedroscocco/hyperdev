@@ -1,97 +1,27 @@
 // server.js
 // where your node app starts
 
-// init
-var H = require("hyperweb");
-var datastore = require("./datastore").sync;
+// init project
+var express = require('express');
+var app = express();
 
-app = H.blastOff();
-datastore.initializeApp(app);
+var https = require('https');
+var bodyParser = require('body-parser');
 
+app.use(bodyParser.text());
+
+// we've started you off with Express,
+// but feel free to use whatever libs or frameworks you'd like through `package.json`.
+
+// http://expressjs.com/en/starter/static-files.html
+app.use(express.static('public'));
+
+// http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (request, response) {
-  try {
-    initializeDatastoreOnProjectCreation();
-    var posts = datastore.get("posts");
-    response.render('index.html', {
-      title: "Welcome To Hyperweb",
-      posts: posts.reverse()
-    });
-  } catch (err) {
-    handleError(err, response);
-  }
+ response.sendFile(__dirname + '/views/index.html');
 });
 
-app.post("/posts", function (request, response) {
-  try {
-    var posts = datastore.get("posts");
-    posts.push(request.body);
-    datastore.set("posts", posts);
-    response.redirect("/");
-  } catch (err) {
-    handleError(err, response);
-  }
+// listen for requests :)
+var listener = app.listen(process.env.PORT, function () {
+  console.log('Your app is listening on port ' + listener.address().port);
 });
-
-app.get("/reset", function (request, response) {
-  try {
-    datastore.removeMany(["posts", "initialized"]);
-    response.redirect("/");
-  } catch (err) {
-    handleError(err, response);
-  }
-});
-
-app.get("/delete", function (request, response) {
-  try {
-    datastore.set("posts", []);
-    response.redirect("/");
-  } catch (err) {
-    handleError(err, response);
-  }
-});
-
-app.get("/dump", function (request, response) {
-  try {
-    var records = [];
-    datastore.keys().forEach(function(key) {
-      var record = {}
-      record[key] = datastore.get(key);
-      records.push(record);
-    });
-    response.send(
-      "<html><head><title>Records Dump</title></head><body><pre>"
-      + JSON.stringify(records, null, 2) + "</pre></body>"
-    );
-  } catch (err) {
-    handleError(err, response);
-  }
-});
-
-function handleError(err, response) {
-  response.status(500);
-  response.send(
-    "<html><head><title>Internal Server Error!</title></head><body><pre>"
-    + JSON.stringify(err, null, 2) + "</pre></body></pre>"
-  );
-}
-
-// ------------------------
-// DATASTORE INITIALIZATION
-
-function initializeDatastoreOnProjectCreation() {
-  if (!datastore.get("initialized")) {
-    datastore.set("posts", initialPosts);
-    datastore.set("initialized", true);
-  }
-}
-
-var initialPosts = [
-  {
-    title: "Hello HyperWeb!",
-    body: "Among other things, you could make a pretty sweet blog with HyperWeb."
-  },
-  {
-    title: "Another Post",
-    body: "Today I saw a double rainbow. It was pretty neat."
-  }
-];
